@@ -1,0 +1,25 @@
+{
+  "name": "bump-git-deps",
+  "version": "1.0.0",
+  "description": "Update each github repo dependency in yoru package.json by appending the latest commit id",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cmmartin/bump-git-deps.git"
+  },
+  "keywords": [
+    "github",
+    "npm",
+    "versions"
+  ],
+  "author": "Charlie Martin <charlie@appfigures.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cmmartin/bump-git-deps/issues"
+  },
+  "homepage": "https://github.com/cmmartin/bump-git-deps#readme"
+}
