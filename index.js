@@ -19,7 +19,8 @@ const githubDeps = Object.keys(packageDotJson.dependencies).reduce((githubDeps, 
 	const version = packageDotJson.dependencies[module]
 	if (version.indexOf(indicator) === 0) {
     const idxOfHash = version.indexOf('#')
-		githubDeps[module] = version.substring(indicator.length, idxOfHash > indicator.length ? idxOfHash : version.length)
+    const endIdx = idxOfHash > indicator.length ? idxOfHash : version.length
+		githubDeps[module] = version.substring(indicator.length, endIdx)
 	}
 	return githubDeps
 }, {})
@@ -35,7 +36,8 @@ const requestsForCommitSha = {}
 for (let repo in githubDeps) {
   let origin = `git@github.com:${ githubDeps[repo] }.git`
 	console.log(`Fetching latest commit ID for ${ repo }`)
-	requestsForCommitSha[repo] = runCommand(`git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`)
+  const shellCommand = `git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`
+	requestsForCommitSha[repo] = runCommand(shellCommand)
 }
 
 const repoNames = Object.keys(requestsForCommitSha)
