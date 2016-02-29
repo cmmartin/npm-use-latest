@@ -1,10 +1,11 @@
 # npm-use-latest
 
+#### How it works
 1. Searches your `package.json` for github dependencies, indicated by the `github:` prefix
 2. Fetches their latest commit ID using `git ls-remote`
 3. Appends the new commit ID to the dependency, forcing npm to install the latest version
 
-#### Before
+##### Before
 
 ```javascript
 {
@@ -15,7 +16,7 @@
   }
 }
 ```
-
+##### During
 ```
 $ npm-use-latest
 Fetching latest commit ID for react
@@ -23,7 +24,7 @@ Fetching latest commit ID for lodash
 Successfully updated package.json
 ```
 
-#### After
+##### After
 
 ```javascript
 {
@@ -33,4 +34,20 @@ Successfully updated package.json
     "lodash": "github:lodash/lodash#2c5f026d3c59a38c429246513437681569b523b8"
   }
 }
+```
+
+#### Install
+```bash
+npm i -g cmmartin/npm-use-latest
+```
+
+I'll publish this to npm eventually and save you those extra 9 characters
+
+#### Usage
+
+Navigate to your project root and run it!
+
+```bash
+cd path/to/my/project/root
+npm-use-latest
 ```
