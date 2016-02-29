@@ -9,8 +9,8 @@ const pathToPackageDotJson = path.resolve(process.cwd(), 'package.json')
 const packageDotJson = require(pathToPackageDotJson)
 const branch = 'master'
 
-// this is how we know if its a github dependency
-// this prefix is optional, which makes this check not so great, 
+// This is how we know if its a github dependency.
+// This prefix is optional, which makes this check not so great, 
 // but allows a cheap form of blacklisting by removing it for repos to ignore
 const indicator = 'github:'
 
@@ -18,7 +18,8 @@ const indicator = 'github:'
 const githubDeps = Object.keys(packageDotJson.dependencies).reduce((githubDeps, module) => {
 	const version = packageDotJson.dependencies[module]
 	if (version.indexOf(indicator) === 0) {
-		githubDeps[module] = version.substring(indicator.length, version.indexOf('#') || version.length)
+    const idxOfHash = version.indexOf('#')
+		githubDeps[module] = version.substring(indicator.length, idxOfHash > indicator.length ? idxOfHash : version.length)
 	}
 	return githubDeps
 }, {})
@@ -32,16 +33,21 @@ const requestsForCommitSha = {}
 
 // Fetch the latest commit sha using git ls-remote
 for (let repo in githubDeps) {
-	console.log(`fetching latest commit sha for ${ repo }`)
-	let origin = `git@github.com:${ githubDeps[repo] }.git`
+  let origin = `git@github.com:${ githubDeps[repo] }.git`
+	console.log(`Fetching latest commit ID for ${ repo }`)
 	requestsForCommitSha[repo] = runCommand(`git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`)
 }
 
-const repos = Object.keys(requestsForCommitSha)
+const repoNames = Object.keys(requestsForCommitSha)
 
 const createUpdatedDependencies = commitIds => commitIds.reduce((updatedDependenciesMap, commitId, idx) => {
-	const repoWithCommitId = `github:${ githubDeps[repos[idx]] }#${ commitId }`
-	updatedDependenciesMap[repos[idx]] = repoWithCommitId
+  const repoName = repoNames[idx]
+  if (commitId) {
+    const repoWithCommitId = `github:${ githubDeps[repoName] }#${ commitId }`
+    updatedDependenciesMap[repoName] = repoWithCommitId
+  } else {
+    console.log(`Failed to fetch latest commit ID for ${ repoName }`)
+  }
 	return updatedDependenciesMap
 }, {})
 
@@ -53,7 +59,7 @@ const writeUpdatedPackageDotJson = updatedDependenciesMap => {
 	})
 }
 
-Promise.all(repos.map(name => requestsForCommitSha[name])).
+Promise.all(repoNames.map(name => requestsForCommitSha[name])).
 	then(createUpdatedDependencies).
 	then(writeUpdatedPackageDotJson)
 
