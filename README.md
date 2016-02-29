@@ -5,7 +5,7 @@
 2. Fetches their latest commit ID using `git ls-remote`
 3. Appends the new commit ID to the dependency, forcing npm to install the latest version
 
-##### Before
+###### Before
 
 ```javascript
 {
@@ -16,7 +16,7 @@
   }
 }
 ```
-##### During
+###### During
 ```
 $ npm-use-latest
 Fetching latest commit ID for react
@@ -24,7 +24,7 @@ Fetching latest commit ID for lodash
 Successfully updated package.json
 ```
 
-##### After
+###### After
 
 ```javascript
 {
