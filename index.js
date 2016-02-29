@@ -30,7 +30,7 @@ const runCommand = command => new Promise((resolve, reject) => exec(command, (er
 
 const requestsForCommitSha = {}
 
-// Fetch the latest commit id using git ls-remote
+// Fetch the latest commit sha using git ls-remote
 for (let repo in githubDeps) {
 	console.log(`fetching latest commit sha for ${ repo }`)
 	let origin = `git@github.com:${ githubDeps[repo] }.git`
