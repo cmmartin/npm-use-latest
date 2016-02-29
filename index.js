@@ -16,18 +16,18 @@ const indicator = 'github:'
 
 // Find all github dependencies in package.json
 const githubDeps = Object.keys(packageDotJson.dependencies).reduce((githubDeps, module) => {
-	const version = packageDotJson.dependencies[module]
-	if (version.indexOf(indicator) === 0) {
+  const version = packageDotJson.dependencies[module]
+  if (version.indexOf(indicator) === 0) {
     const idxOfHash = version.indexOf('#')
     const endIdx = idxOfHash > indicator.length ? idxOfHash : version.length
-		githubDeps[module] = version.substring(indicator.length, endIdx)
-	}
-	return githubDeps
+    githubDeps[module] = version.substring(indicator.length, endIdx)
+  }
+  return githubDeps
 }, {})
 
 const runCommand = command => new Promise((resolve, reject) => exec(command, (error, stdout, stderr) => {
-	if (error || stderr) reject(error || stderr)
-	else resolve(stdout)
+  if (error || stderr) reject(error || stderr)
+  else resolve(stdout)
 })).catch(err => console.error(err))
 
 const requestsForCommitSha = {}
@@ -35,9 +35,9 @@ const requestsForCommitSha = {}
 // Fetch the latest commit sha using git ls-remote
 for (let repo in githubDeps) {
   let origin = `git@github.com:${ githubDeps[repo] }.git`
-	console.log(`Fetching latest commit ID for ${ repo }`)
+  console.log(`Fetching latest commit ID for ${ repo }`)
   const shellCommand = `git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`
-	requestsForCommitSha[repo] = runCommand(shellCommand)
+  requestsForCommitSha[repo] = runCommand(shellCommand)
 }
 
 const repoNames = Object.keys(requestsForCommitSha)
@@ -50,18 +50,18 @@ const createUpdatedDependencies = commitIds => commitIds.reduce((updatedDependen
   } else {
     console.log(`Failed to fetch latest commit ID for ${ repoName }`)
   }
-	return updatedDependenciesMap
+  return updatedDependenciesMap
 }, {})
 
 const writeUpdatedPackageDotJson = updatedDependenciesMap => {
-	Object.assign(packageDotJson.dependencies, updatedDependenciesMap)
-	fs.writeFile(pathToPackageDotJson, JSON.stringify(packageDotJson, null, 2), err => {
-	    if (err) return console.error(err)
-	    console.log('Successfully updated package.json')
-	})
+  Object.assign(packageDotJson.dependencies, updatedDependenciesMap)
+  fs.writeFile(pathToPackageDotJson, JSON.stringify(packageDotJson, null, 2), err => {
+      if (err) return console.error(err)
+      console.log('Successfully updated package.json')
+  })
 }
 
 Promise.all(repoNames.map(name => requestsForCommitSha[name])).
-	then(createUpdatedDependencies).
-	then(writeUpdatedPackageDotJson)
+  then(createUpdatedDependencies).
+  then(writeUpdatedPackageDotJson)
 
