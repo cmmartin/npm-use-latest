@@ -5,51 +5,55 @@
 const path = require('path')
 const fs = require('fs')
 const exec = require('child_process').exec
-const pkg = require('./package.json')
-const indicator = 'github:'
+const pathToPackageDotJson = path.resolve(process.cwd(), 'package.json')
+const packageDotJson = require(pathToPackageDotJson)
 const branch = 'master'
 
+// this is how we know if its a github dependency
+// this prefix is optional, which makes this check not so great, 
+// but allows a cheap form of blacklisting by removing it for repos to ignore
+const indicator = 'github:'
+
 // Find all github dependencies in package.json
-const githubDeps = Object.keys(pkg.dependencies).reduce((githubDeps, module) => {
-	const version = pkg.dependencies[module]
+const githubDeps = Object.keys(packageDotJson.dependencies).reduce((githubDeps, module) => {
+	const version = packageDotJson.dependencies[module]
 	if (version.indexOf(indicator) === 0) {
 		githubDeps[module] = version.substring(indicator.length, version.indexOf('#') || version.length)
 	}
 	return githubDeps
 }, {})
 
-const requests = {}
+const runCommand = command => new Promise((resolve, reject) => exec(command, (error, stdout, stderr) => {
+	if (error || stderr) reject(error || stderr)
+	else resolve(stdout)
+})).catch(err => console.error(err))
 
-// Fetch the latest commit id on master for each repo using git ls-remote
+const requestsForCommitSha = {}
+
+// Fetch the latest commit id using git ls-remote
 for (let repo in githubDeps) {
+	console.log(`fetching latest commit sha for ${ repo }`)
 	let origin = `git@github.com:${ githubDeps[repo] }.git`
-	console.log(`fetching commit id for ${ repo } at ${ origin }`)
-	requests[repo] = runCommand(`git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`)
+	requestsForCommitSha[repo] = runCommand(`git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`)
 }
 
-// Update the package.json with latest commit ids
-const repos = Object.keys(requests)
-const updatedDependencies = {}
-Promise.all(repos.map(name => requests[name])).
-	then(commitIds => commitIds.reduce((updatedDependencies, commitId, idx) => {
-		const repoWithCommitId = `github:${ githubDeps[repos[idx]] }#${ commitId }`
-		updatedDependencies[repos[idx]] = repoWithCommitId
-		return updatedDependencies
-	}, {})).
-	then(updatedDependencies => {
-		const pathToPackage = path.resolve(process.cwd(), 'package.json')
-		const updatedPackage = Object.assign(pkg, { 
-			dependencies: Object.assign(pkg.dependencies, updatedDependencies) 
-		})
-		fs.writeFile(pathToPackage, JSON.stringify(updatedPackage, null, 2), err => {
-		    if (err) return console.error(err)
-		    console.log('package.json updated successfully')
-		})
+const repos = Object.keys(requestsForCommitSha)
+
+const createUpdatedDependencies = commitIds => commitIds.reduce((updatedDependenciesMap, commitId, idx) => {
+	const repoWithCommitId = `github:${ githubDeps[repos[idx]] }#${ commitId }`
+	updatedDependenciesMap[repos[idx]] = repoWithCommitId
+	return updatedDependenciesMap
+}, {})
+
+const writeUpdatedPackageDotJson = updatedDependenciesMap => {
+	Object.assign(packageDotJson.dependencies, updatedDependenciesMap)
+	fs.writeFile(pathToPackageDotJson, JSON.stringify(packageDotJson, null, 2), err => {
+	    if (err) return console.error(err)
+	    console.log('Successfully updated package.json')
 	})
-
-function runCommand(command) {
-	return new Promise((resolve, reject) => exec(command, (error, stdout, stderr) => {
-		if (error || stderr) reject(error || stderr)
-		else resolve(stdout)
-	})).catch(err => console.error(err))
 }
+
+Promise.all(repos.map(name => requestsForCommitSha[name])).
+	then(createUpdatedDependencies).
+	then(writeUpdatedPackageDotJson)
+
