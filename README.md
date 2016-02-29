@@ -16,6 +16,13 @@
 }
 ```
 
+```
+$ npm-use-latest
+Fetching latest commit ID for react
+Fetching latest commit ID for lodash
+Successfully updated package.json
+```
+
 #### After
 
 ```javascript
