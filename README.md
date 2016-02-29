@@ -1,1 +1,1 @@
-# bump-git-deps
+# npm-use-latest
