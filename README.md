@@ -51,3 +51,9 @@ Navigate to your project root and run it!
 cd path/to/my/project/root
 npm-use-latest
 ```
+
+#### Requirements
+
+- A recent enough version of npm that supports github dependencies
+- A recent enough version of node.js that supports ecma 6 syntax (const, arrow functions, etc)
+- git
