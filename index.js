@@ -28,16 +28,32 @@ const githubDeps = Object.keys(packageDotJson.dependencies).reduce((githubDeps, 
 const runCommand = command => new Promise((resolve, reject) => exec(command, (error, stdout, stderr) => {
   if (error || stderr) reject(error || stderr)
   else resolve(stdout)
-})).catch(err => console.error(err))
+}))
 
 const requestsForCommitSha = {}
 
 // Fetch the latest commit sha using git ls-remote
 for (let repo in githubDeps) {
-  let origin = `git@github.com:${ githubDeps[repo] }.git`
   console.log(`Fetching latest commit ID for ${ repo }`)
-  const shellCommand = `git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`
-  requestsForCommitSha[repo] = runCommand(shellCommand)
+
+  function makeCommand(type) {
+    let origin
+    if (type === 'ssh') {
+      origin = `git@github.com:${ githubDeps[repo] }.git`
+    } else if (type === 'https') {
+      origin = `https://github.com/${ githubDeps[repo] }.git`
+    }
+
+    return `git ls-remote ${ origin } ${ branch } | cut -f1 | tr -d '\n'`
+  }
+
+  const promise = runCommand(makeCommand('ssh')).catch(e => {
+    return runCommand(makeCommand('https'))
+  })
+
+  promise.catch(error => console.error(error))
+
+  requestsForCommitSha[repo] = promise
 }
 
 const repoNames = Object.keys(requestsForCommitSha)
